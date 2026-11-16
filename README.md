@@ -1,2 +1,2 @@
 # p2poolv2-probe
-a block explorer for  p2poolv2
+![Screenshot of dashboard](preview.png)
