@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>p2poolv2 probe</title>
+
+<style>
+* { box-sizing: border-box; }
+
+h1 {
+  text-align: center;
+}
+
+body {
+    margin: 0;
+    background: #000;
+    color: #eee;
+    font: 13px "Courier New", monospace;
+}
+
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px;
+    border-bottom: 1px solid #333;
+}
+
+input {
+    flex: 1;
+    min-width: 180px;
+    padding: 9px;
+    color: #eee;
+    background: #111;
+    border: 1px solid #555;
+    font: inherit;
+}
+
+#status { color: #bbb; }
+
+#viewport { padding: 20px; }
+
+#chain {
+    position: relative;
+    display: grid;
+    gap: 15px;
+    overflow-x: hidden;
+}
+
+
+#links {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.row {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 12px;
+    width: max-content;
+}
+
+.block, .uncle {
+    flex: 0 0 250px;
+    height: 150px;
+    padding: 14px;
+    overflow: hidden;
+    background: linear-gradient(110deg, hsl(var(--hue, 0) 55% 50% / .12), #111 75%);
+    border: 1px solid hsl(var(--hue, 0) 45% 55% / .7);
+    border-radius: 4px;
+}
+
+
+.uncle { border-color: #aaa; }
+.watched { background: #222; border: 2px solid #fff; }
+
+.height {
+    margin-bottom: 8px;
+    color: #fff;
+    font-size: 16px;
+}
+
+.details {
+    overflow: hidden;
+    color: #bbb;
+    font-size: 10px;
+    line-height: 1.8;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.details-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 15px; 
+}
+.item {
+    padding: 20px;
+    text-align: center;
+    border-radius: 5px;
+}
+.copy-address { cursor: pointer; }
+.copy-address:hover { color: #fff; text-decoration: underline; }
+.empty { visibility: hidden; }
+</style>
+</head>
+
+<body>
+
+<div class="controls">
+    <input id="node_url" value="https://proxy.cors.dev/https://testnet5.p2poolv2.org">
+    <input id="watch_address" placeholder="Address">
+</div>
+<div id="viewport">
+    <div id="chain">
+        <svg id="links"></svg>
+        <div id="blocks" class="row"></div>
+        <div id="uncles" class="row"></div>
+    </div>
+</div>
+
+<h1>P2poolv2 Statistics:</h1>
+<div class="details-container">
+    <span id="hashrate" class="item">hashrate</span>
+    <span id="network_hr" class="item">network_hr</span>
+    <span id="network_hr_share" class="item">network_hr_share</span>
+    <span id="mean_block_time" class="item">mean_block_time</span>
+    <span id="effort" class="item">Effort </span>
+    <span id="blocks_found" class="item">Blocks Found </span>
+    <span id="share_maturity" class="item">Share maturity: 6,048</span>
+    <span id="share_window" class="item">Share window: 120,960</span>
+</div>
+
+
+<script>
+    const $ = id => document.getElementById(id);
+
+    function copyAddress(element) {
+        navigator.clipboard.writeText(element.textContent);
+    }
+
+    function difficulty(bits) {
+        if (!bits) return "--";
+        const value = typeof bits === "string" ? parseInt(bits, 16) : bits;
+        if (!Number.isFinite(value) || value <= 0) return "--";
+        const exponent = value >>> 24;
+        const mantissa = value & 0x007fffff;
+        if (!mantissa || exponent < 3) return "--";
+        const target = BigInt(mantissa) << BigInt(8 * (exponent - 3));
+        const result = (BigInt(65535) << 208n) / target;
+        return Number(result);
+    }
+    function difficulty_to_hashrate(difficulty) {
+        const hashrate = (difficulty * Math.pow(2, 32)) / 10;
+        return Number((hashrate / 1e12).toFixed(2))
+    }
+    function hue_hash(scAddress, bitcoinAddress) {
+        const text = `${scAddress || ""}|${bitcoinAddress || ""}`.toLowerCase();
+        let hash = 2166136261;
+        for (let i = 0; i < text.length; i++) {
+            hash = Math.imul(hash ^ text.charCodeAt(i), 16777619);
+        }
+        return (hash >>> 0) % 360;
+    }
+    async function update_info(block) {
+        let response = await fetch($("node_url").value+"/share?hash=" + block.blockhash + "&full=true", {
+            cache: "no-store"
+        });
+        response = await response.json();
+        let metrics = await fetch($("node_url").value+"/metrics", {
+            cache: "no-store"
+        });
+        metrics = await metrics.text();
+        const wslb_match = metrics.match(/^work_since_last_block\s+([0-9.eE+-]+)/m);
+        const wslb = wslb_match ? Number(wslb_match[1]) : null;
+
+        const bbft_match = metrics.match(/^bitcoin_blocks_found_total\s+([0-9.eE+-]+)/m);
+        const bbft = wslb_match ? Number(bbft_match[1]) : null;
+
+        document.getElementById('hashrate').textContent = "P2poolv2 Hashrate: " + String(difficulty_to_hashrate(difficulty(block.bits))) + "Th/s"
+
+        const header_bits = parseInt(response[0].bitcoin_header.bits);
+        const header_exponent = header_bits >>> 24;
+        const header_mantissa = header_bits & 0x007fffff;
+        const bitcoin_difficulty = (0x00ffff / header_mantissa) * Math.pow(2, 8 * (0x1d - header_exponent))
+        const bitcoin_hashrate = (bitcoin_difficulty * Math.pow(2, 32)) / 600;
+
+        document.getElementById('network_hr').textContent = "Network Hashrate: " + (bitcoin_hashrate / 1e12).toFixed(2).toLocaleString()  + "Th/s"
+        document.getElementById('network_hr_share').textContent = "Network Hashrate share: " + (difficulty_to_hashrate(difficulty(block.bits))/(bitcoin_hashrate/1e12)*100).toFixed(2) + "%"
+        document.getElementById('mean_block_time').textContent =  "Mean block time: " + (((bitcoin_hashrate/1e12)/difficulty_to_hashrate(difficulty(block.bits))*600)/60).toFixed(2).toLocaleString() + " Minutes"
+        
+        document.getElementById('effort').textContent = "Effort: " + ((wslb/bitcoin_difficulty)*100).toFixed(2) + "%"
+        document.getElementById('blocks_found').textContent = "Blocks found: " + bbft
+    }
+    async function load() {
+        try {
+            const response = await fetch($("node_url").value+"/candidates", {
+                cache: "no-store"
+            });
+
+            if (!response.ok) throw Error(response.status);
+
+            const data = await response.json();
+            const blocks = data.shares || [];
+            const watched = $("watch_address").value.trim().toLowerCase();
+            const uncles = [];
+            const connections = [];
+
+            $("blocks").innerHTML = "";
+            $("uncles").innerHTML = "";
+            $("links").replaceChildren();
+
+
+            update_info(blocks[0]);
+            
+            blocks.forEach((block, index) => {
+                const match = watched &&
+                    [block.miner_address, block.miner_bitcoin_address]
+                        .some(address => address?.toLowerCase() === watched);
+
+                $("blocks").innerHTML += `
+                    <div class="block ${match ? "watched" : ""}" style="--hue:${hue_hash(block.miner_address, block.miner_bitcoin_address)}">
+
+                        <div class="height">BLOCK #${block.height}</div>
+                        <div class="details">
+                            Block hash:
+                            <span class="copy-address" onclick="copyAddress(this)">${block.blockhash || "--"}</span><br>
+                            Share chain address:
+                            <span class="copy-address" onclick="copyAddress(this)">${block.miner_address || "--"}</span><br>
+                            Bitcoin address:
+                            <span class="copy-address" onclick="copyAddress(this)">${block.miner_bitcoin_address || "--"}</span><br>
+                            Difficulty: ${difficulty(block.bits).toLocaleString("en-US")}<br>
+                            Time: ${block.timestamp ? new Date(block.timestamp * 1000).toLocaleString() : "--"}
+                        </div>
+                    </div>
+                `;
+
+                (block.uncles || []).forEach(uncle => {
+                    uncles.push({ uncle, parentIndex: index });
+                });
+            });
+
+            blocks.forEach((block, index) => {
+                const item = uncles.find(item =>
+                    Number(item.uncle.height) === Number(block.height)
+                );
+
+                $("uncles").innerHTML += item ? `
+                    <div class="uncle" style="--hue:${hue_hash(item.uncle.miner_address, item.uncle.miner_bitcoin_address)}">
+
+                        <div class="height">UNCLE #${item.uncle.height}</div>
+                        <div class="details">
+                            Block hash:
+                            <span class="copy-address" onclick="copyAddress(this)">${item.uncle.blockhash || "--"}</span><br>
+                            Share chain address:
+                            <span class="copy-address" onclick="copyAddress(this)">${item.uncle.miner_address || "--"}</span><br>
+                            Bitcoin address:
+                            <span class="copy-address" onclick="copyAddress(this)">${item.uncle.miner_bitcoin_address || "--"}</span><br>
+                            Difficulty: ${difficulty(item.uncle.bits).toLocaleString("en-US")}<br>
+                            Time: ${item.uncle.timestamp ? new Date(item.uncle.timestamp * 1000).toLocaleString() : "--"}
+                        </div>
+                    </div>
+                ` : `<div class="empty block"></div>`;
+
+                if (item) connections.push({ from: item.parentIndex, to: index });
+            });
+
+            const svg = $("links");
+            const chainRect = $("chain").getBoundingClientRect();
+
+            svg.setAttribute("width", $("chain").scrollWidth);
+            svg.setAttribute("height", $("chain").scrollHeight);
+
+            connections.forEach(({ from, to }) => {
+                const parent = $("blocks").children[from].getBoundingClientRect();
+                const uncle = $("uncles").children[to].getBoundingClientRect();
+
+                svg.insertAdjacentHTML("beforeend", `
+                    <line
+                        x1="${parent.left + parent.width / 2 - chainRect.left}"
+                        y1="${parent.bottom - chainRect.top}"
+                        x2="${uncle.left + uncle.width / 2 - chainRect.left}"
+                        y2="${uncle.top - chainRect.top}"
+                        stroke="#aaa"
+                    />
+                `);
+            });
+        } catch (error) {}
+    }
+    load();
+    setInterval(load, 5000);
+</script>
+
+</body>
+</html>
