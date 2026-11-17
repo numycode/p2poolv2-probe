@@ -3,110 +3,122 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>p2poolv2 probe</title>
+<title>P2poolv2 probe</title>
 
 <style>
-* { box-sizing: border-box; }
+    * { box-sizing: border-box; }
 
-h1 {
-  text-align: center;
-}
-
-body {
-    margin: 0;
-    background: #000;
-    color: #eee;
-    font: 13px "Courier New", monospace;
-}
-
-.controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 14px;
-    border-bottom: 1px solid #333;
-}
-
-input {
-    flex: 1;
-    min-width: 180px;
-    padding: 9px;
-    color: #eee;
-    background: #111;
-    border: 1px solid #555;
-    font: inherit;
-}
-
-#status { color: #bbb; }
-
-#viewport { padding: 20px; }
-
-#chain {
-    position: relative;
-    display: grid;
-    gap: 15px;
-    overflow-x: hidden;
-}
-
-
-#links {
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 0;
-    pointer-events: none;
-}
-
-.row {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    gap: 12px;
-    width: max-content;
-}
-
-.block, .uncle {
-    flex: 0 0 250px;
-    height: 150px;
-    padding: 14px;
-    overflow: hidden;
-    background: linear-gradient(110deg, hsl(var(--hue, 0) 55% 50% / .12), #111 75%);
-    border: 1px solid hsl(var(--hue, 0) 45% 55% / .7);
-    border-radius: 4px;
-}
-
-
-.uncle { border-color: #aaa; }
-.watched { background: #222; border: 2px solid #fff; }
-
-.height {
-    margin-bottom: 8px;
-    color: #fff;
-    font-size: 16px;
-}
-
-.details {
-    overflow: hidden;
-    color: #bbb;
-    font-size: 10px;
-    line-height: 1.8;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-
-.details-container {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr); 
-    gap: 15px; 
-}
-.item {
-    padding: 20px;
+    h1 {
     text-align: center;
-    border-radius: 5px;
-}
-.copy-address { cursor: pointer; }
-.copy-address:hover { color: #fff; text-decoration: underline; }
-.empty { visibility: hidden; }
+    }
+
+    body {
+        margin: 0;
+        background: #000;
+        color: #eee;
+        font: 13px "Courier New", monospace;
+    }
+
+    .label {
+    color: #888888;
+    }
+
+    .controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px;
+        border-bottom: 1px solid #333;
+    }
+
+    input {
+        flex: 1;
+        min-width: 180px;
+        padding: 9px;
+        color: #eee;
+        background: #111;
+        border: 1px solid #555;
+        font: inherit;
+    }
+
+    #status { color: #bbb; }
+
+    #viewport { padding: 20px; }
+
+    #chain {
+        position: relative;
+        display: grid;
+        gap: 15px;
+        overflow-x: hidden;
+    }
+
+
+    #links {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    .row {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        gap: 12px;
+        width: max-content;
+    }
+
+    .block, .uncle {
+        flex: 0 0 250px;
+        height: 150px;
+        padding: 14px;
+        overflow: hidden;
+        background: linear-gradient(110deg, hsl(var(--hue, 0) 55% 50% / .12), #111 75%);
+        border: 1px solid hsl(var(--hue, 0) 45% 55% / .7);
+        border-radius: 4px;
+    }
+
+
+    .uncle { border-color: #aaa; }
+    .watched { background: #222; border: 2px solid #fff; }
+
+    .height {
+        margin-bottom: 8px;
+        color: #fff;
+        font-size: 16px;
+    }
+
+    .details {
+        overflow: hidden;
+        color: #bbb;
+        font-size: 10px;
+        line-height: 1.8;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .details-container {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); 
+        gap: 15px; 
+    }
+    .item {
+        padding: 20px;
+        text-align: center;
+        border-radius: 5px;
+    }
+
+    #hashrate_graph {
+    display: block;
+    width: 100%;
+    height: 240px;
+    margin: 20px auto;
+    }
+
+    .copy-address { cursor: pointer; }
+    .copy-address:hover { color: #fff; text-decoration: underline; }
+    .empty { visibility: hidden; }
 </style>
 </head>
 
@@ -123,7 +135,8 @@ input {
         <div id="uncles" class="row"></div>
     </div>
 </div>
-
+<canvas id="hashrate_graph"></canvas>
+<span style="color:#52d273">P2Pool hashrate</span> <span style="color:#f5a623">Bitcoin hashrate</span>
 <h1>P2poolv2 Statistics:</h1>
 <div class="details-container">
     <span id="hashrate" class="item">hashrate</span>
@@ -132,15 +145,14 @@ input {
     <span id="mean_block_time" class="item">mean_block_time</span>
     <span id="effort" class="item">Effort </span>
     <span id="blocks_found" class="item">Blocks Found </span>
-    <span id="share_maturity" class="item">Share maturity: 6,048</span>
-    <span id="share_window" class="item">Share window: 120,960</span>
+    <span id="share_maturity" class="item"><span class="label">Share maturity: </span>6,048</span>
+    <span id="share_window" class="item"><span class="label">Share window: </span>120,960</span>
 </div>
-
 
 <script>
     const $ = id => document.getElementById(id);
 
-    function copyAddress(element) {
+    function copy_address(element) {
         navigator.clipboard.writeText(element.textContent);
     }
 
@@ -168,11 +180,11 @@ input {
         return (hash >>> 0) % 360;
     }
     async function update_info(block) {
-        let response = await fetch($("node_url").value+"/share?hash=" + block.blockhash + "&full=true", {
+        let response = await fetch($("node_url").value+"/share?hash=" + block.blockhash + "&full=true", { // used for network_hr, network_hr_share, mean_block_time and effort
             cache: "no-store"
         });
         response = await response.json();
-        let metrics = await fetch($("node_url").value+"/metrics", {
+        let metrics = await fetch($("node_url").value+"/metrics", { // used for blocks_found and effort
             cache: "no-store"
         });
         metrics = await metrics.text();
@@ -182,7 +194,7 @@ input {
         const bbft_match = metrics.match(/^bitcoin_blocks_found_total\s+([0-9.eE+-]+)/m);
         const bbft = wslb_match ? Number(bbft_match[1]) : null;
 
-        document.getElementById('hashrate').textContent = "P2poolv2 Hashrate: " + String(difficulty_to_hashrate(difficulty(block.bits))) + "Th/s"
+        document.getElementById('hashrate').innerHTML = '<span class="label">P2poolv2 Hashrate: </span>' + String(difficulty_to_hashrate(difficulty(block.bits))) + " Th/s";
 
         const header_bits = parseInt(response[0].bitcoin_header.bits);
         const header_exponent = header_bits >>> 24;
@@ -190,14 +202,14 @@ input {
         const bitcoin_difficulty = (0x00ffff / header_mantissa) * Math.pow(2, 8 * (0x1d - header_exponent))
         const bitcoin_hashrate = (bitcoin_difficulty * Math.pow(2, 32)) / 600;
 
-        document.getElementById('network_hr').textContent = "Network Hashrate: " + (bitcoin_hashrate / 1e12).toFixed(2).toLocaleString()  + "Th/s"
-        document.getElementById('network_hr_share').textContent = "Network Hashrate share: " + (difficulty_to_hashrate(difficulty(block.bits))/(bitcoin_hashrate/1e12)*100).toFixed(2) + "%"
-        document.getElementById('mean_block_time').textContent =  "Mean block time: " + (((bitcoin_hashrate/1e12)/difficulty_to_hashrate(difficulty(block.bits))*600)/60).toFixed(2).toLocaleString() + " Minutes"
-        
-        document.getElementById('effort').textContent = "Effort: " + ((wslb/bitcoin_difficulty)*100).toFixed(2) + "%"
-        document.getElementById('blocks_found').textContent = "Blocks found: " + bbft
+        document.getElementById('network_hr').innerHTML = '<span class="label">Network Hashrate: </span>' + (bitcoin_hashrate / 1e12).toFixed(2).toLocaleString() + " Th/s";
+        document.getElementById('network_hr_share').innerHTML = '<span class="label">Network Hashrate share: </span>' + (difficulty_to_hashrate(difficulty(block.bits)) / (bitcoin_hashrate / 1e12) * 100).toFixed(2) + "%";
+        document.getElementById('mean_block_time').innerHTML = '<span class="label">Mean block time: </span>' + (((bitcoin_hashrate / 1e12) / difficulty_to_hashrate(difficulty(block.bits)) * 600) / 60).toFixed(2).toLocaleString() + " Minutes";
+        document.getElementById('effort').innerHTML = '<span class="label">Effort: </span>' + ((wslb / bitcoin_difficulty) * 100).toFixed(2) + "%";
+        document.getElementById('blocks_found').innerHTML = '<span class="label">Blocks found: </span>' + bbft;
+
     }
-    async function load() {
+    async function block_visualizer() {
         try {
             const response = await fetch($("node_url").value+"/candidates", {
                 cache: "no-store"
@@ -207,7 +219,7 @@ input {
 
             const data = await response.json();
             const blocks = data.shares || [];
-            const watched = $("watch_address").value.trim().toLowerCase();
+            const watch_address = $("watch_address").value.trim().toLowerCase();
             const uncles = [];
             const connections = [];
 
@@ -216,10 +228,10 @@ input {
             $("links").replaceChildren();
 
 
-            update_info(blocks[0]);
+            update_info(blocks[0]); // updates the statistics
             
             blocks.forEach((block, index) => {
-                const match = watched &&
+                const match = watch_address &&
                     [block.miner_address, block.miner_bitcoin_address]
                         .some(address => address?.toLowerCase() === watched);
 
@@ -229,11 +241,11 @@ input {
                         <div class="height">BLOCK #${block.height}</div>
                         <div class="details">
                             Block hash:
-                            <span class="copy-address" onclick="copyAddress(this)">${block.blockhash || "--"}</span><br>
+                            <span class="copy-address" onclick="copy_address(this)">${block.blockhash || "--"}</span><br>
                             Share chain address:
-                            <span class="copy-address" onclick="copyAddress(this)">${block.miner_address || "--"}</span><br>
+                            <span class="copy-address" onclick="copy_address(this)">${block.miner_address || "--"}</span><br>
                             Bitcoin address:
-                            <span class="copy-address" onclick="copyAddress(this)">${block.miner_bitcoin_address || "--"}</span><br>
+                            <span class="copy-address" onclick="copy_address(this)">${block.miner_bitcoin_address || "--"}</span><br>
                             Difficulty: ${difficulty(block.bits).toLocaleString("en-US")}<br>
                             Time: ${block.timestamp ? new Date(block.timestamp * 1000).toLocaleString() : "--"}
                         </div>
@@ -256,11 +268,11 @@ input {
                         <div class="height">UNCLE #${item.uncle.height}</div>
                         <div class="details">
                             Block hash:
-                            <span class="copy-address" onclick="copyAddress(this)">${item.uncle.blockhash || "--"}</span><br>
+                            <span class="copy-address" onclick="copy_address(this)">${item.uncle.blockhash || "--"}</span><br>
                             Share chain address:
-                            <span class="copy-address" onclick="copyAddress(this)">${item.uncle.miner_address || "--"}</span><br>
+                            <span class="copy-address" onclick="copy_address(this)">${item.uncle.miner_address || "--"}</span><br>
                             Bitcoin address:
-                            <span class="copy-address" onclick="copyAddress(this)">${item.uncle.miner_bitcoin_address || "--"}</span><br>
+                            <span class="copy-address" onclick="copy_address(this)">${item.uncle.miner_bitcoin_address || "--"}</span><br>
                             Difficulty: ${difficulty(item.uncle.bits).toLocaleString("en-US")}<br>
                             Time: ${item.uncle.timestamp ? new Date(item.uncle.timestamp * 1000).toLocaleString() : "--"}
                         </div>
@@ -292,6 +304,57 @@ input {
             });
         } catch (error) {}
     }
+    async function plot_hashrate() {
+        const base = $("node_url").value.replace(/\/+$/, "");
+        const shares = (await (await fetch(`${base}/candidates`)).json()).shares || [];
+        const current = Math.max(...shares.map(s => +s.height || 0));
+        const points = [];
+
+        for (let i = 40; i >= 0; i--) {
+            const height = current - i * 432;
+            if (height < 0) continue;
+            const share = await (await fetch(`${base}/share?height=${height}&full=true`)).json();
+            const s = Array.isArray(share) ? share[0] : share;
+            if (!s?.bitcoin_header?.bits) continue;
+
+            const bits = parseInt(s.bitcoin_header.bits);
+            const exp = bits >>> 24, mantissa = bits & 0x007fffff;
+            if (!mantissa) continue;
+
+            const bitcoin_diff = (0xffff / mantissa) * 2 ** (8 * (0x1d - exp));
+            points.push([
+                difficulty(s.bits) * 2 ** 32 / 10 / 1e12,
+                bitcoin_diff * 2 ** 32 / 600 / 1e12
+            ]);
+        }
+
+        const c = $("hashrate_graph"), ctx = c.getContext("2d");
+        c.width = c.clientWidth; c.height = 300;
+        const w = c.width, h = c.height, max = Math.max(...points.flat(), 1) * 1.1;
+        ctx.clearRect(0, 0, w, h);
+
+        ctx.fillStyle = "#bbb";
+        ctx.font = "10px 'Courier New'";
+        ctx.textAlign = "right";
+        ctx.fillText(max.toFixed(2), 38, 34);
+        ctx.fillText((max / 2).toFixed(2), 38, h / 2 + 10);
+        ctx.fillText("0", 38, h - 10);
+
+
+        for (const [n, color] of [[0, "#52d273"], [1, "#f5a623"]]) {
+            ctx.strokeStyle = color; ctx.beginPath();
+            points.forEach((p, i) => {
+                const x = 45 + i * (w - 55) / Math.max(points.length - 1, 1);
+                const y = h - 10 - p[n] / max * (h - 40);
+                i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+            });
+            ctx.stroke();
+        }
+    }
+
+    graph();
+
+
     load();
     setInterval(load, 5000);
 </script>
