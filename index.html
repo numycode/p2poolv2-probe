@@ -156,7 +156,7 @@
 
 <div>
     <button onclick="show_tab('overview')">Overview</button>
-    <button onclick="show_tab('mineing')">Mineing</button>
+    <button onclick="show_tab('mining')">Mining</button>
     <button onclick="show_tab('network')">Network</button>
 </div>
 <h1>P2poolv2 Statistics:</h1>
@@ -175,8 +175,8 @@
 
 <canvas id="hashrate_graph" class="tab-list" hidden></canvas>
 <span id="hashrate_graph_key" class="tab-list" style="white-space: nowrap;" hidden><span style="color:#52d273">P2Pool hashrate</span> <span style="color:#f5a623">Bitcoin hashrate</span></span>
-<div id="mineing" class="details-container tab-list" hidden>
-    <span id="coin_base" class="item">more comeing soon...</span>
+<div id="mining" class="details-container tab-list" hidden>
+    <span id="coin_base" class="item">more coming soon...</span>
 </div>
 
 <canvas id="map" class="tab-list" hidden>map</canvas>
@@ -191,8 +191,8 @@
     function show_tab(id) {
         document.querySelectorAll('.tab-list').forEach(el => el.hidden = true);
         document.getElementById('map').style.display = (id === 'network') ? 'block' : 'none';
-        document.getElementById('hashrate_graph').style.display = (id === 'mineing') ? 'block' : 'none';
-        document.getElementById('hashrate_graph_key').style.display = (id === 'mineing') ? 'block' : 'none';
+        document.getElementById('hashrate_graph').style.display = (id === 'mining') ? 'block' : 'none';
+        document.getElementById('hashrate_graph_key').style.display = (id === 'mining') ? 'block' : 'none';
         document.getElementById(id).hidden = false;
     }
     function to_difficulty(bits) { // diff = 0x00ffff * 2^(8*0x1d-exp)
@@ -362,7 +362,7 @@
             ctx.fillText("0", 38, h - 10);
 
 
-            await new Promise(requestAnimationFrame); // TODO this sometime dose not work and draws flat
+            await new Promise(requestAnimationFrame); // TODO this sometimes doesn't work and draws flat
             for (const [n, color] of [[0, "#52d273"], [1, "#f5a623"]]) {
                 ctx.strokeStyle = color; ctx.beginPath();
                 points.forEach((p, i) => {
