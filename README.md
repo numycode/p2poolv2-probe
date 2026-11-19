@@ -1,9 +1,10 @@
 # P2Pool v2 Probe
 ![Screenshot of dashboard](preview.png)
+## Goal / mission
+- To provide a lightweight HTML file to view a p2poolv2 node API feed.
 ## Features
 - Each miner appears as a different color on the chain preview
-- Can add a watch address, if a block/share is found including that address it will be highlighted
-- Click on the address or hash to copy it
+- Click on block/share to inspect it
 - All data is sourced from the node that you provide
 - No backend needed
 
