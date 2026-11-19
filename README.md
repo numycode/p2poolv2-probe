@@ -1,5 +1,11 @@
 # P2Pool v2 Probe
-![Screenshot of dashboard](preview.png)
+Overview tab
+![Screenshot of overview tab](overview.png)
+Mining tab
+![Screenshot of mining tab](mining.png)
+Network tab
+![Screenshot of network tab](network.png)
+
 ## Goal / mission
 - To provide a lightweight HTML file to view a p2poolv2 node API feed.
 ## Features
